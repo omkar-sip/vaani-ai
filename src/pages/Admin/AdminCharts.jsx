@@ -23,14 +23,13 @@ export function PieChart({ data, size = 220 }) {
   const innerR = outerR * 0.58;
 
   // Build arc segments
-  let startAngle = -90;
-  const segments = data.map((d, i) => {
+  const segments = data.reduce((items, d, i) => {
     const pct = d.value / total;
     const sweep = pct * 360;
-    const seg = { ...d, pct, sweep, start: startAngle, color: PALETTE[i % PALETTE.length] };
-    startAngle += sweep;
-    return seg;
-  });
+    const start = items.length ? items[items.length - 1].start + items[items.length - 1].sweep : -90;
+    items.push({ ...d, pct, sweep, start, color: PALETTE[i % PALETTE.length] });
+    return items;
+  }, []);
 
   function arcPath(cx, cy, r, startDeg, sweepDeg) {
     const s = (startDeg * Math.PI) / 180;
