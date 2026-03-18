@@ -24,7 +24,7 @@ export default function VerifyEmail() {
       }
     }, 3000);
     return () => clearInterval(interval);
-  }, []);
+  }, [setAuthStep]);
 
   async function handleResend() {
     setResending(true);

@@ -4,6 +4,10 @@
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
+        "source": "/api/food/scan",
+        "function": "foodScanApi"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

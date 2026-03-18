@@ -34,6 +34,7 @@
 }
 .abtn:hover { border-color: var(--sun); color: var(--sun); background: var(--sun3); }
 .abtn.voice { background: var(--rose3); border-color: rgba(220,38,38,.25); color: var(--rose); }
+.abtn.scan { background: #fff7ed; border-color: rgba(249,115,22,.24); color: #c2410c; }
 .ahint { font-size: 11px; color: var(--text3); margin-left: auto; }
 
 /* Export bar */

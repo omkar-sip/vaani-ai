@@ -1,6 +1,5 @@
 import {
   getAuth,
-  signInAnonymously,
   onAuthStateChanged,
   linkWithCredential,
   signInWithPopup,
@@ -11,65 +10,68 @@ import {
   sendPasswordResetEmail,
   signOut,
 } from 'firebase/auth';
-import { app } from './config';
+import { app, hasFirebaseConfig } from './config';
 
-const auth = getAuth(app);
+const auth = app ? getAuth(app) : null;
 const googleProvider = new GoogleAuthProvider();
 
-// ─── Anonymous Auth ──────────────────────────────────
-export async function signInAnon() {
-  return signInAnonymously(auth);
+function assertAuthConfigured() {
+  if (!auth || !hasFirebaseConfig) {
+    throw new Error('Firebase is not configured. Add Vite Firebase env vars to enable authentication.');
+  }
 }
 
-// ─── Google Sign-In ──────────────────────────────────
 export async function signInWithGoogle() {
+  assertAuthConfigured();
   return signInWithPopup(auth, googleProvider);
 }
 
-// ─── Email/Password Sign-Up ──────────────────────────
 export async function signUpWithEmail(email, password) {
+  assertAuthConfigured();
   const credential = await createUserWithEmailAndPassword(auth, email, password);
-  // Send verification email
   await sendEmailVerification(credential.user);
   return credential;
 }
 
-// ─── Email/Password Sign-In ──────────────────────────
 export async function signInWithEmail(email, password) {
+  assertAuthConfigured();
   return signInWithEmailAndPassword(auth, email, password);
 }
 
-// ─── Resend Verification Email ───────────────────────
 export async function resendVerification() {
+  assertAuthConfigured();
   const user = auth.currentUser;
   if (!user) throw new Error('No user signed in');
   await sendEmailVerification(user);
 }
 
-// ─── Password Reset ─────────────────────────────────
 export async function resetPassword(email) {
+  assertAuthConfigured();
   return sendPasswordResetEmail(auth, email);
 }
 
-// ─── Sign Out ────────────────────────────────────────
 export async function logOut() {
+  if (!auth) return;
   return signOut(auth);
 }
 
-// ─── Auth State Listener ─────────────────────────────
 export function onAuthChange(callback) {
+  if (!auth) {
+    callback(null);
+    return () => {};
+  }
   return onAuthStateChanged(auth, callback);
 }
 
-// ─── Link Anonymous → Permanent ──────────────────────
 export async function linkAnonymousAccount(credential) {
+  assertAuthConfigured();
   const user = auth.currentUser;
   if (!user) throw new Error('No authenticated user to link');
   return linkWithCredential(user, credential);
 }
 
 export function getCurrentUser() {
-  return auth.currentUser;
+  return auth?.currentUser ?? null;
 }
 
 export { auth };

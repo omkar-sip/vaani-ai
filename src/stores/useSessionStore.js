@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export const useSessionStore = create((set, get) => ({
+export const useSessionStore = create((set) => ({
   mode: 'companion',       // 'companion' | 'consultant'
   section: 'health',       // 'health' | 'finance'
   messages: [],
@@ -55,4 +55,19 @@ export const useSessionStore = create((set, get) => ({
     })),
   reset: () =>
     set({ messages: [], extracted: {}, turns: 0 }),
+  resetForLogout: () =>
+    set({
+      mode: 'companion',
+      section: 'health',
+      messages: [],
+      extracted: {},
+      turns: 0,
+      totalTurns: 0,
+      totalFields: 0,
+      view: 'chat',
+      sessions: [],
+      allSessions: [],
+      curSess: null,
+      langStats: { kn: 0, hi: 0, en: 0, mx: 0 },
+    }),
 }));

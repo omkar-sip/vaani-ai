@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useUserStore } from './stores/useUserStore';
 import { useSessionStore } from './stores/useSessionStore';
 import { onAuthChange } from './firebase/auth';
+import { hasFirebaseConfig } from './firebase/config';
 import { saveUserToFirestore } from './firebase/firestore';
 import { now } from './utils/helpers';
 
@@ -15,47 +16,12 @@ export default function App() {
   const setUser = useUserStore((s) => s.setUser);
   const setAuthStep = useUserStore((s) => s.setAuthStep);
   const setApiKey = useSessionStore((s) => s.setApiKey);
+  const setDemo = useSessionStore((s) => s.setDemo);
   const setMode = useSessionStore((s) => s.setMode);
   const addSession = useSessionStore((s) => s.addSession);
 
-  // ─── Listen to Firebase auth state ────────────
-  useEffect(() => {
-    // Set up Gemini API key from env
-    const envKey = import.meta.env.VITE_GEMINI_API_KEY;
-    if (envKey && envKey.startsWith('AIza')) {
-      setApiKey(envKey);
-    }
-
-    const unsub = onAuthChange((user) => {
-      if (user) {
-        setUser(user);
-        // Save/update user document in Firestore on every login
-        saveUserToFirestore(user).catch((e) => console.error('Firestore user save failed:', e));
-        if (user.providerData.some((p) => p.providerId === 'google.com')) {
-          // Google users are auto-verified
-          initSession('companion');
-          setAuthStep('ready');
-        } else if (user.emailVerified) {
-          initSession('companion');
-          setAuthStep('ready');
-        } else if (user.email) {
-          // Email user but not verified
-          setAuthStep('verify');
-        } else {
-          // No user info yet
-          setAuthStep('language');
-        }
-      } else {
-        setAuthStep('language');
-      }
-    });
-
-    return unsub;
-  }, []);
-
-  function initSession(defaultMode) {
+  const initSession = useCallback((defaultMode) => {
     const sessionStore = useSessionStore.getState();
-    // Only create first session if none exist
     if (sessionStore.sessions.length === 0) {
       setMode(defaultMode);
       addSession({
@@ -68,17 +34,54 @@ export default function App() {
         messages: [],
       });
     }
-  }
+  }, [addSession, setMode]);
 
-  // ─── Render based on auth step ────────────────
+  useEffect(() => {
+    const envKey = import.meta.env.VITE_GEMINI_API_KEY;
+    if (envKey && envKey.startsWith('AIza')) {
+      setApiKey(envKey);
+    } else {
+      setDemo();
+    }
+
+    if (!hasFirebaseConfig) {
+      initSession('companion');
+      setUser(null);
+      setAuthStep('ready');
+      return () => {};
+    }
+
+    const unsub = onAuthChange((user) => {
+      if (user) {
+        setUser(user);
+        saveUserToFirestore(user).catch((e) => console.error('Firestore user save failed:', e));
+        if (user.providerData.some((p) => p.providerId === 'google.com')) {
+          initSession('companion');
+          setAuthStep('ready');
+        } else if (user.emailVerified) {
+          initSession('companion');
+          setAuthStep('ready');
+        } else if (user.email) {
+          setAuthStep('verify');
+        } else {
+          setAuthStep('language');
+        }
+      } else {
+        setAuthStep('language');
+      }
+    });
+
+    return unsub;
+  }, [initSession, setApiKey, setAuthStep, setDemo, setUser]);
+
   if (authStep === 'loading') {
     return (
       <div style={{
         height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
         background: 'var(--bg)', flexDirection: 'column', gap: 12,
       }}>
-        <div style={{ fontSize: 40, animation: 'flt 2s ease-in-out infinite' }}>🎙️</div>
-        <div style={{ fontWeight: 700, color: 'var(--text3)', fontSize: 14 }}>Loading VaaniAI…</div>
+        <div style={{ fontSize: 40, animation: 'flt 2s ease-in-out infinite' }}>Loading</div>
+        <div style={{ fontWeight: 700, color: 'var(--text3)', fontSize: 14 }}>Loading VaaniAI...</div>
       </div>
     );
   }

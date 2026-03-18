@@ -5,7 +5,7 @@ import './ChatArea.css';
  * Single message bubble.
  * @param {{ role: 'user'|'ai', text: string, lang?: string, mode: string }} props
  */
-export default function MessageBubble({ role, text, lang, mode }) {
+export default function MessageBubble({ role, text, lang }) {
   const safe = text
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')

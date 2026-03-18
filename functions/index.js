@@ -1,4 +1,5 @@
 const { onRequest } = require('firebase-functions/v2/https');
+const { createFoodScanHandler } = require('./features/foodScanner/foodScanner.controller');
 
 /**
  * Proxy for Gemini API calls in production.
@@ -37,3 +38,5 @@ exports.geminiProxy = onRequest({ cors: true }, async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+exports.foodScanApi = onRequest({ cors: true }, createFoodScanHandler());

@@ -9,4 +9,5 @@ const firebaseConfig = {
   appId:             import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-export const app = initializeApp(firebaseConfig);
+export const hasFirebaseConfig = Object.values(firebaseConfig).every(Boolean);
+export const app = hasFirebaseConfig ? initializeApp(firebaseConfig) : null;

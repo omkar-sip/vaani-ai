@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useUserStore } from '../../stores/useUserStore';
+import { hasFirebaseConfig } from '../../firebase/config';
 import './AuthPages.css';
 
 const LANGUAGES = [
@@ -18,7 +19,7 @@ export default function LanguageSelect() {
 
   function handleContinue() {
     setProfile({ language: selected });
-    setAuthStep('auth');
+    setAuthStep(hasFirebaseConfig ? 'auth' : 'ready');
   }
 
   return (

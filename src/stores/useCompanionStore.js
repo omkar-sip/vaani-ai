@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 
-export const useCompanionStore = create((set, get) => ({
+export const useCompanionStore = create((set) => ({
   // All values start empty/null — no fake data
   weeklyScore: null,
   stressLevel: null,

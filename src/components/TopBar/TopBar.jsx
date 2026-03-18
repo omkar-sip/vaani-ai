@@ -6,7 +6,9 @@ import './TopBar.css';
 
 export default function TopBar() {
   const demo = useSessionStore((s) => s.demo);
+  const resetForLogout = useSessionStore((s) => s.resetForLogout);
   const user = useUserStore((s) => s.user);
+  const clearUser = useUserStore((s) => s.clearUser);
   const [showMenu, setShowMenu] = useState(false);
 
   const initial = user?.displayName?.[0]?.toUpperCase()
@@ -15,29 +17,41 @@ export default function TopBar() {
 
   async function handleLogout() {
     setShowMenu(false);
-    await logOut();
+    try {
+      await logOut();
+    } finally {
+      resetForLogout();
+      clearUser();
+    }
   }
 
   return (
     <div className="topbar">
-      <div className="logo-icon">🎙</div>
-      <div>
+      <div className="logo-icon">V</div>
+      <div className="topbar-brand">
         <div className="logo-name">VaaniAI</div>
         <div className="logo-sub" id="logo-sub">
           Health Assistant
         </div>
       </div>
-      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+
+      <div className="topbar-actions">
         <div className={`mbadge ${demo ? 'demo' : 'live'}`}>
           <div className="pulse" />
           <span>{demo ? 'Demo' : 'Live AI'}</span>
         </div>
 
-        {/* User avatar with logout */}
         <div className="user-menu-wrap">
-          <button className="user-avatar" onClick={() => setShowMenu(!showMenu)}>
-            {initial}
+          <button
+            className={`profile-tab ${showMenu ? 'open' : ''}`}
+            onClick={() => setShowMenu(!showMenu)}
+            aria-haspopup="menu"
+            aria-expanded={showMenu}
+          >
+            <span className="profile-tab-label">Profile</span>
+            <span className="user-avatar">{initial}</span>
           </button>
+
           {showMenu && (
             <>
               <div className="user-menu-backdrop" onClick={() => setShowMenu(false)} />
@@ -48,7 +62,7 @@ export default function TopBar() {
                 </div>
                 <div className="user-menu-divider" />
                 <button className="user-menu-item logout" onClick={handleLogout}>
-                  🚪 Sign out
+                  Sign out
                 </button>
               </div>
             </>
