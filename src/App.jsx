@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useUserStore } from './stores/useUserStore';
 import { useSessionStore } from './stores/useSessionStore';
 import { onAuthChange } from './firebase/auth';
@@ -10,6 +10,7 @@ import LanguageSelect from './pages/Auth/LanguageSelect';
 import AuthPage from './pages/Auth/AuthPage';
 import VerifyEmail from './pages/Auth/VerifyEmail';
 import Home from './pages/Home';
+import AdminDashboard from './pages/Admin/AdminDashboard';
 
 export default function App() {
   const authStep = useUserStore((s) => s.authStep);
@@ -19,6 +20,16 @@ export default function App() {
   const setDemo = useSessionStore((s) => s.setDemo);
   const setMode = useSessionStore((s) => s.setMode);
   const addSession = useSessionStore((s) => s.addSession);
+
+  const [route, setRoute] = useState(window.location.hash);
+
+  useEffect(() => {
+    function onHashChange() {
+      setRoute(window.location.hash);
+    }
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
 
   const initSession = useCallback((defaultMode) => {
     const sessionStore = useSessionStore.getState();
@@ -89,6 +100,11 @@ export default function App() {
   if (authStep === 'language') return <LanguageSelect />;
   if (authStep === 'auth') return <AuthPage />;
   if (authStep === 'verify') return <VerifyEmail />;
+
+  /* Hash-based routing for admin dashboard */
+  if (route === '#/admin') {
+    return <AdminDashboard onBack={() => { window.location.hash = ''; }} />;
+  }
 
   return <Home />;
 }

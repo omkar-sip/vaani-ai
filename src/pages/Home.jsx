@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { useSessionStore } from '../stores/useSessionStore';
+import { useUserStore } from '../stores/useUserStore';
 import { useCompanionStore } from '../stores/useCompanionStore';
 import { callGemini, getDemoResponse } from '../api/gemini';
 import { DISTRESS_WORDS, FIELD_LABELS, SYSTEM_PROMPTS, VOICE_SAMPLES } from '../utils/constants';
@@ -9,6 +10,7 @@ import { buildCompanionHealthReport } from '../features/companionReport/reportAn
 import { downloadCompanionReportPdf } from '../features/companionReport/pdfReport';
 import { buildConsultantReportData } from '../features/consultantReport/reportData';
 import { downloadConsultantReportPdf } from '../features/consultantReport/pdfReport';
+import { trackEvent } from '../firebase/analyticsTracker';
 
 import TopBar from '../components/TopBar/TopBar';
 import ModeToggle from '../components/ModeToggle/ModeToggle';
@@ -18,6 +20,7 @@ import BottomNav from '../components/BottomNav/BottomNav';
 import RightPanel from '../components/RightPanel/RightPanel';
 import EmergencyStrip from '../components/Emergency/EmergencyStrip';
 import FoodScanner from '../features/foodScanner/FoodScanner';
+import UserNameModal from '../components/UserNameModal/UserNameModal';
 
 export default function Home() {
   const [showTyping, setShowTyping] = useState(false);
@@ -30,6 +33,7 @@ export default function Home() {
   const recognitionRef = useRef(null);
   const listeningRef = useRef(false);
   const latestInteractionRef = useRef(0);
+  const sessionStartTimeRef = useRef(Date.now());
 
   const mode = useSessionStore((s) => s.mode);
   const section = useSessionStore((s) => s.section);
@@ -45,6 +49,9 @@ export default function Home() {
   const addSession = useSessionStore((s) => s.addSession);
   const openSession = useSessionStore((s) => s.openSession);
   const updateLangStat = useSessionStore((s) => s.updateLangStat);
+  const needsNamePrompt = useSessionStore((s) => s.needsNamePrompt);
+  const setUserName = useSessionStore((s) => s.setUserName);
+  const user = useUserStore((s) => s.user);
 
   const applyCompanionData = useCompanionStore((s) => s.applyCompanionData);
   const triggerDistress = useCompanionStore((s) => s.triggerDistress);
@@ -126,6 +133,18 @@ export default function Home() {
     incrementTurns();
     setShowTyping(true);
     scanDistress(text);
+
+    /* analytics: message sent */
+    const freshUser = useUserStore.getState().user;
+    const freshSession = useSessionStore.getState();
+    trackEvent('message_sent', {
+      userId: freshUser?.uid || '',
+      userName: freshSession.userName || '',
+      userEmail: freshUser?.email || '',
+      sessionId: freshSession.curSess || '',
+      mode: freshSession.mode,
+      section: freshSession.section,
+    });
 
     const freshState = useSessionStore.getState();
     const currentMode = freshState.mode;
@@ -262,6 +281,22 @@ export default function Home() {
   }
 
   function handleNewSession() {
+    /* analytics: end previous session */
+    const prevState = useSessionStore.getState();
+    const prevUser = useUserStore.getState().user;
+    if (prevState.curSess) {
+      trackEvent('session_end', {
+        userId: prevUser?.uid || '',
+        userName: prevState.userName || '',
+        userEmail: prevUser?.email || '',
+        sessionId: prevState.curSess,
+        mode: prevState.mode,
+        section: prevState.section,
+        durationMs: Date.now() - sessionStartTimeRef.current,
+        turnsCount: prevState.turns,
+      });
+    }
+
     const id = 's' + Date.now();
     addSession({
       id,
@@ -273,6 +308,7 @@ export default function Home() {
       messages: [],
     });
     setCompCardVisible(false);
+    sessionStartTimeRef.current = Date.now();
   }
 
   function downloadBlob(blob, name) {
@@ -344,6 +380,16 @@ export default function Home() {
         companionSnapshot: useCompanionStore.getState(),
       });
       await downloadCompanionReportPdf({ report });
+      /* analytics: companion report downloaded */
+      const freshUser = useUserStore.getState().user;
+      trackEvent('feature_used', {
+        userId: freshUser?.uid || '',
+        userName: freshState.userName || '',
+        userEmail: freshUser?.email || '',
+        sessionId: freshState.curSess || '',
+        mode: 'companion',
+        feature: 'companion_report',
+      });
     } catch (error) {
       alert(t('healthReportFailed') + error.message);
     } finally {
@@ -375,6 +421,16 @@ export default function Home() {
         extracted: extractedFields,
       });
       await downloadConsultantReportPdf({ report });
+      /* analytics: consultant report downloaded */
+      const freshUser = useUserStore.getState().user;
+      trackEvent('feature_used', {
+        userId: freshUser?.uid || '',
+        userName: freshState.userName || '',
+        userEmail: freshUser?.email || '',
+        sessionId: freshState.curSess || '',
+        mode: 'consultant',
+        feature: 'consultant_report',
+      });
     } catch (error) {
       alert(t('consultantReportFailed') + error.message);
     } finally {
@@ -538,7 +594,20 @@ export default function Home() {
             onNewSession={handleNewSession}
             onExport={handleExport}
             onSummary={handleSummary}
-            onOpenFoodScanner={() => setFoodScannerOpen(true)}
+            onOpenFoodScanner={() => {
+              setFoodScannerOpen(true);
+              /* analytics: food scanner opened */
+              const freshUser = useUserStore.getState().user;
+              const freshSess = useSessionStore.getState();
+              trackEvent('feature_used', {
+                userId: freshUser?.uid || '',
+                userName: freshSess.userName || '',
+                userEmail: freshUser?.email || '',
+                sessionId: freshSess.curSess || '',
+                mode: freshSess.mode,
+                feature: 'food_scanner',
+              });
+            }}
             listening={listening}
             showCompanionReportAction={canDownloadCompanionReport}
             onDownloadCompanionReport={handleDownloadCompanionReport}
@@ -553,6 +622,24 @@ export default function Home() {
 
       <FoodScanner open={foodScannerOpen} onClose={() => setFoodScannerOpen(false)} />
       <BottomNav onVoice={handleVoice} />
+
+      {needsNamePrompt && (
+        <UserNameModal
+          onSubmit={(name) => {
+            setUserName(name);
+            const freshSess = useSessionStore.getState();
+            trackEvent('session_start', {
+              userId: user?.uid || '',
+              userName: name,
+              userEmail: user?.email || '',
+              sessionId: freshSess.curSess || '',
+              mode: freshSess.mode,
+              section: freshSess.section,
+            });
+            sessionStartTimeRef.current = Date.now();
+          }}
+        />
+      )}
     </div>
   );
 }

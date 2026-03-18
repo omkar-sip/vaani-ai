@@ -13,6 +13,7 @@ function normalizeSession(session) {
     messages: session.messages || [],
     foodScans: session.foodScans || [],
     preview: session.preview || '',
+    userName: session.userName || '',
     lastUpdatedAt: session.lastUpdatedAt || new Date().toISOString(),
   };
 }
@@ -85,6 +86,8 @@ export const useSessionStore = create((set, get) => {
     sessions: [],
     allSessions: [],
     curSess: null,
+    userName: '',
+    needsNamePrompt: false,
     langStats: { kn: 0, hi: 0, en: 0, mx: 0 },
 
     setMode: (mode) =>
@@ -94,6 +97,8 @@ export const useSessionStore = create((set, get) => {
         extracted: {},
         turns: 0,
         curSess: null,
+        userName: '',
+        needsNamePrompt: true,
         view: 'chat',
       }),
 
@@ -200,6 +205,21 @@ export const useSessionStore = create((set, get) => {
     setApiKey: (apiKey) => set({ apiKey, demo: false }),
     setDemo: () => set({ demo: true }),
 
+    setUserName: (name) => {
+      const state = get();
+      set({ userName: name, needsNamePrompt: false });
+      if (state.curSess) {
+        updateActiveSession(
+          (session) => ({
+            ...session,
+            userName: name,
+            lastUpdatedAt: new Date().toISOString(),
+          }),
+          { userName: name }
+        );
+      }
+    },
+
     addSession: (session) => {
       const created = normalizeSession({
         ...session,
@@ -215,6 +235,8 @@ export const useSessionStore = create((set, get) => {
         messages: created.messages,
         extracted: created.extractedData,
         turns: created.turns,
+        userName: '',
+        needsNamePrompt: true,
         view: 'chat',
       });
     },
@@ -284,6 +306,8 @@ export const useSessionStore = create((set, get) => {
         extracted: {},
         turns: 0,
         curSess: null,
+        userName: '',
+        needsNamePrompt: false,
       }),
 
     resetForLogout: () =>
@@ -299,6 +323,8 @@ export const useSessionStore = create((set, get) => {
         sessions: [],
         allSessions: [],
         curSess: null,
+        userName: '',
+        needsNamePrompt: false,
         langStats: { kn: 0, hi: 0, en: 0, mx: 0 },
       }),
   };

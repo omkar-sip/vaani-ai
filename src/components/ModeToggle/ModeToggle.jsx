@@ -1,5 +1,7 @@
 import { useSessionStore } from '../../stores/useSessionStore';
+import { useUserStore } from '../../stores/useUserStore';
 import { useI18n } from '../../hooks/useI18n';
+import { trackEvent } from '../../firebase/analyticsTracker';
 import './ModeToggle.css';
 
 export default function ModeToggle() {
@@ -10,7 +12,17 @@ export default function ModeToggle() {
   const isComp = mode === 'companion';
 
   function toggle() {
-    setMode(isComp ? 'consultant' : 'companion');
+    const nextMode = isComp ? 'consultant' : 'companion';
+    const user = useUserStore.getState().user;
+    const sess = useSessionStore.getState();
+    trackEvent('mode_switch', {
+      userId: user?.uid || '',
+      userName: sess.userName || '',
+      userEmail: user?.email || '',
+      fromMode: mode,
+      toMode: nextMode,
+    });
+    setMode(nextMode);
   }
 
   function handleKeyDown(event) {

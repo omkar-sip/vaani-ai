@@ -1,0 +1,117 @@
+.name-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  animation: nmFadeIn 0.35s ease;
+}
+
+@keyframes nmFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.name-modal-card {
+  width: min(92vw, 400px);
+  background: linear-gradient(135deg, rgba(30, 32, 48, 0.92), rgba(22, 24, 38, 0.96));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 36px 28px 28px;
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+    0 1px 0 rgba(255, 255, 255, 0.06) inset;
+  animation: nmSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: center;
+}
+
+@keyframes nmSlideUp {
+  from { opacity: 0; transform: translateY(32px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.name-modal-icon {
+  width: 56px;
+  height: 56px;
+  margin: 0 auto 16px;
+  background: linear-gradient(135deg, var(--accent, #7c5cfc), var(--teal, #2dd4bf));
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  box-shadow: 0 8px 24px rgba(124, 92, 252, 0.25);
+}
+
+.name-modal-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 6px;
+  letter-spacing: -0.3px;
+}
+
+.name-modal-subtitle {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 24px;
+  line-height: 1.5;
+}
+
+.name-modal-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: #fff;
+  font-size: 15px;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.name-modal-input::placeholder {
+  color: rgba(255, 255, 255, 0.3);
+}
+
+.name-modal-input:focus {
+  border-color: var(--accent, #7c5cfc);
+  box-shadow: 0 0 0 3px rgba(124, 92, 252, 0.15);
+}
+
+.name-modal-btn {
+  width: 100%;
+  margin-top: 16px;
+  padding: 14px;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  background: linear-gradient(135deg, var(--accent, #7c5cfc), #6c47f0);
+  color: #fff;
+  transition: opacity 0.2s, transform 0.1s;
+  letter-spacing: 0.2px;
+}
+
+.name-modal-btn:hover {
+  opacity: 0.92;
+}
+
+.name-modal-btn:active {
+  transform: scale(0.98);
+}
+
+.name-modal-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  transform: none;
+}
