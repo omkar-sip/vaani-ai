@@ -33,12 +33,31 @@ export default function Home() {
   const sessions = useSessionStore((s) => s.sessions);
   const allSessions = useSessionStore((s) => s.allSessions);
   const addSession = useSessionStore((s) => s.addSession);
+  const openSession = useSessionStore((s) => s.openSession);
   const updateLangStat = useSessionStore((s) => s.updateLangStat);
 
   const applyCompanionData = useCompanionStore((s) => s.applyCompanionData);
   const triggerDistress = useCompanionStore((s) => s.triggerDistress);
 
   const isComp = mode === 'companion';
+
+  function formatHistoryTime(value) {
+    if (!value) return 'Recently';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return value;
+    return parsed.toLocaleString([], {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
+  function trimPreview(value, max = 120) {
+    const text = String(value || '').trim();
+    if (!text) return '';
+    return text.length > max ? text.slice(0, max).trim() + '...' : text;
+  }
 
   function speakText(text) {
     if (!('speechSynthesis' in window)) return;
@@ -267,22 +286,77 @@ export default function Home() {
         <TopBar />
         <div className="fview on">
           <div className="vt">Session History</div>
-          <div className="vs">All past consultations and check-ins</div>
+          <div className="vs">Saved chats, conversations, and food scans across all sessions</div>
           {!allSessions.length ? (
             <div style={{ color: 'var(--text3)', textAlign: 'center', marginTop: 36, fontSize: 14 }}>
               No sessions yet. Start a conversation.
             </div>
           ) : (
             allSessions.map((session) => (
-              <div className="hcard" key={session.id}>
+              <div className="hcard history-card" key={session.id}>
                 <div className="hchead">
                   <span className="hctitle">{session.title}</span>
                   <span className={`dtag ${session.domain === 'companion' ? 'companion' : 'health'}`}>
                     {session.domain}
                   </span>
+                  {session.domain !== 'companion' && (
+                    <span className={`dtag ${session.section === 'finance' ? 'finance' : 'health'}`}>
+                      {session.section}
+                    </span>
+                  )}
                   <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text3)' }}>
-                    {session.time} · {session.turns}t
+                    {formatHistoryTime(session.lastUpdatedAt || session.time)}
                   </span>
+                </div>
+
+                <div className="history-meta-row">
+                  <span>{session.turns || 0} user turns</span>
+                  <span>{session.messages?.length || 0} messages</span>
+                  <span>{session.foodScans?.length || 0} food scans</span>
+                </div>
+
+                {session.preview && (
+                  <div className="history-preview">
+                    {trimPreview(session.preview, 180)}
+                  </div>
+                )}
+
+                {!!session.messages?.length && (
+                  <div className="history-block">
+                    <div className="history-block-title">Recent conversation</div>
+                    <div className="history-list">
+                      {session.messages.slice(-3).map((message, index) => (
+                        <div className="history-item" key={`${session.id}-msg-${index}`}>
+                          <span className={`history-role ${message.role}`}>{message.role === 'ai' ? 'AI' : 'You'}</span>
+                          <span className="history-text">{trimPreview(message.content, 140)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {!!session.foodScans?.length && (
+                  <div className="history-block">
+                    <div className="history-block-title">Food scans</div>
+                    <div className="history-list">
+                      {session.foodScans.slice(0, 3).map((scan) => (
+                        <div className="history-item food" key={scan.id}>
+                          <span className={`history-risk ${String(scan.riskLevel || '').toLowerCase()}`}>
+                            {scan.riskLevel}
+                          </span>
+                          <span className="history-text">
+                            {scan.productName} · {trimPreview(scan.summary, 120)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="history-actions">
+                  <button className="history-open-btn" onClick={() => openSession(session.id)}>
+                    Open Session
+                  </button>
                 </div>
               </div>
             ))

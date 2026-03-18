@@ -145,6 +145,86 @@ html, body {
 }
 .hchead { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
 .hctitle { font-size: 13px; font-weight: 700; }
+.history-card { display: flex; flex-direction: column; gap: 12px; }
+.history-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--text3);
+  font-weight: 600;
+}
+.history-meta-row span {
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+.history-preview {
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--text2);
+  background: var(--warm);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.history-block { display: flex; flex-direction: column; gap: 8px; }
+.history-block-title {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .3px;
+  color: var(--text3);
+}
+.history-list { display: flex; flex-direction: column; gap: 7px; }
+.history-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 11px;
+  border-radius: 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+}
+.history-role,
+.history-risk {
+  flex-shrink: 0;
+  padding: 3px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .2px;
+}
+.history-role.user { background: var(--sky3); color: var(--sky); }
+.history-role.ai { background: var(--sun3); color: #C2410C; }
+.history-risk.good { background: var(--leaf3); color: var(--leaf); }
+.history-risk.caution { background: var(--sun3); color: #C2410C; }
+.history-risk.avoid { background: var(--rose3); color: var(--rose); }
+.history-text {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text2);
+}
+.history-actions { display: flex; justify-content: flex-end; }
+.history-open-btn {
+  border: 1.5px solid rgba(249,115,22,.25);
+  background: var(--sun3);
+  color: #C2410C;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: var(--font);
+  cursor: pointer;
+  transition: all .18s;
+}
+.history-open-btn:hover {
+  background: var(--sun);
+  color: #fff;
+  border-color: var(--sun);
+}
 
 /* ═══ Floating animation ═══ */
 @keyframes flt {

@@ -9,6 +9,7 @@ export default function RightPanel() {
   const turns = useSessionStore((s) => s.turns);
   const sessions = useSessionStore((s) => s.sessions);
   const curSess = useSessionStore((s) => s.curSess);
+  const openSession = useSessionStore((s) => s.openSession);
 
   if (mode === 'companion') return null;
 
@@ -81,7 +82,11 @@ export default function RightPanel() {
         {/* Sessions list */}
         <div className="slist">
           {sessions.map((s) => (
-            <div className={`sitem ${s.id === curSess ? 'on' : ''}`} key={s.id}>
+            <div
+              className={`sitem ${s.id === curSess ? 'on' : ''}`}
+              key={s.id}
+              onClick={() => openSession(s.id)}
+            >
               <div className="sname">{s.title}</div>
               <div className="smeta">
                 <span className={`dtag ${s.domain === 'companion' ? 'companion' : 'health'}`}>
@@ -89,6 +94,7 @@ export default function RightPanel() {
                 </span>
                 <span>{s.time}</span>
                 <span>{s.turns}t</span>
+                {!!s.foodScans?.length && <span>{s.foodScans.length} scans</span>}
               </div>
             </div>
           ))}

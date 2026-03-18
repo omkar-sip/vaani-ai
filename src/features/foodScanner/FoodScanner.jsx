@@ -32,6 +32,7 @@ function availabilityLabel(value) {
 
 export default function FoodScanner({ open, onClose }) {
   const mode = useSessionStore((s) => s.mode);
+  const addFoodScan = useSessionStore((s) => s.addFoodScan);
   const user = useUserStore((s) => s.user);
   const profile = useUserStore((s) => s.profile);
 
@@ -106,6 +107,7 @@ export default function FoodScanner({ open, onClose }) {
         mode,
       });
       setResult(payload);
+      addFoodScan(payload);
       if (!productNameInput.trim() && payload.productName) {
         setProductNameInput(payload.productName);
       }
