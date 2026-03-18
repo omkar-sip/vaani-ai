@@ -7,6 +7,8 @@ import { detectLang, now, parseCompanionReply, parseConsultantReply, sleep } fro
 import { useI18n } from '../hooks/useI18n';
 import { buildCompanionHealthReport } from '../features/companionReport/reportAnalysis';
 import { downloadCompanionReportPdf } from '../features/companionReport/pdfReport';
+import { buildConsultantReportData } from '../features/consultantReport/reportData';
+import { downloadConsultantReportPdf } from '../features/consultantReport/pdfReport';
 
 import TopBar from '../components/TopBar/TopBar';
 import ModeToggle from '../components/ModeToggle/ModeToggle';
@@ -23,8 +25,11 @@ export default function Home() {
   const [listening, setListening] = useState(false);
   const [foodScannerOpen, setFoodScannerOpen] = useState(false);
   const [downloadingCompanionReport, setDownloadingCompanionReport] = useState(false);
+  const [downloadingConsultantReport, setDownloadingConsultantReport] = useState(false);
   const voiceIdx = useRef({ companion: 0, health: 0, finance: 0 });
   const recognitionRef = useRef(null);
+  const listeningRef = useRef(false);
+  const latestInteractionRef = useRef(0);
 
   const mode = useSessionStore((s) => s.mode);
   const section = useSessionStore((s) => s.section);
@@ -47,7 +52,12 @@ export default function Home() {
 
   const isComp = mode === 'companion';
   const companionUserTurns = messages.filter((message) => message.role === 'user').length;
+  const filledExtractedFields = Object.values(extracted).filter((value) => value && String(value).trim()).length;
   const canDownloadCompanionReport = isComp && companionUserTurns >= 2;
+  const canDownloadConsultantReport =
+    !isComp &&
+    filledExtractedFields >= 4 &&
+    Boolean(String(extracted.patient_name || extracted.consultation_reason || extracted.chief_complaint || '').trim());
 
   function formatHistoryTime(value) {
     if (!value) return t('recently');
@@ -67,9 +77,24 @@ export default function Home() {
     return text.length > max ? text.slice(0, max).trim() + '...' : text;
   }
 
-  function speakText(text) {
+  function setListeningState(value) {
+    listeningRef.current = value;
+    setListening(value);
+  }
+
+  function noteUserInteraction() {
+    latestInteractionRef.current += 1;
+    return latestInteractionRef.current;
+  }
+
+  function stopNarration() {
     if (!('speechSynthesis' in window)) return;
     window.speechSynthesis.cancel();
+  }
+
+  function speakText(text) {
+    if (!('speechSynthesis' in window)) return;
+    stopNarration();
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.rate = 1;
     utterance.pitch = 1;
@@ -94,6 +119,8 @@ export default function Home() {
   }
 
   async function handleSend(text) {
+    stopNarration();
+    const interactionId = noteUserInteraction();
     const lang = detectLang(text);
     addMessage({ role: 'user', content: text, lang });
     incrementTurns();
@@ -129,7 +156,9 @@ export default function Home() {
           role: message.role === 'ai' ? 'assistant' : message.role,
           content: message.content,
         }));
-        reply = await callGemini(currentApiKey, systemPrompt, apiMessages);
+        reply = await callGemini(currentApiKey, systemPrompt, apiMessages, {
+          requiredSeparator: currentIsComp ? '---COMPANION_JSON---' : '---JSON---',
+        });
       }
 
       setShowTyping(false);
@@ -137,7 +166,9 @@ export default function Home() {
       if (currentIsComp) {
         const { disp, json } = parseCompanionReply(reply);
         addMessage({ role: 'ai', content: disp });
-        speakText(disp);
+        if (interactionId === latestInteractionRef.current && !listeningRef.current) {
+          speakText(disp);
+        }
         if (json) {
           applyCompanionData(json);
           setCompCardVisible(true);
@@ -145,7 +176,9 @@ export default function Home() {
       } else {
         const { disp, json } = parseConsultantReply(reply);
         addMessage({ role: 'ai', content: disp });
-        speakText(disp);
+        if (interactionId === latestInteractionRef.current && !listeningRef.current) {
+          speakText(disp);
+        }
         if (json) {
           setExtracted(json);
           if (json.language_detected) {
@@ -162,8 +195,13 @@ export default function Home() {
 
   function handleVoice() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const wasNarrating =
+      'speechSynthesis' in window &&
+      (window.speechSynthesis.speaking || window.speechSynthesis.pending);
 
     if (!SpeechRecognition) {
+      stopNarration();
+      noteUserInteraction();
       const key = isComp ? 'companion' : section;
       const pool = VOICE_SAMPLES[key] || VOICE_SAMPLES.companion;
       const idx = voiceIdx.current[key] || 0;
@@ -175,10 +213,12 @@ export default function Home() {
 
     if (listening) {
       recognitionRef.current?.stop();
-      setListening(false);
+      setListeningState(false);
       return;
     }
 
+    stopNarration();
+    noteUserInteraction();
     const recognition = new SpeechRecognition();
     recognitionRef.current = recognition;
     recognition.continuous = false;
@@ -186,14 +226,14 @@ export default function Home() {
     recognition.lang = languageConfig.speechCode;
     recognition.maxAlternatives = 1;
 
-    recognition.onstart = () => setListening(true);
+    recognition.onstart = () => setListeningState(true);
 
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript;
       if (transcript.trim()) {
         handleSend(transcript.trim());
       }
-      setListening(false);
+      setListeningState(false);
     };
 
     recognition.onerror = (event) => {
@@ -201,11 +241,24 @@ export default function Home() {
       if (event.error === 'not-allowed') {
         alert(t('microphoneDenied'));
       }
-      setListening(false);
+      recognitionRef.current = null;
+      setListeningState(false);
     };
 
-    recognition.onend = () => setListening(false);
-    recognition.start();
+    recognition.onend = () => {
+      recognitionRef.current = null;
+      setListeningState(false);
+    };
+
+    window.setTimeout(() => {
+      try {
+        recognition.start();
+      } catch (error) {
+        console.error('Speech recognition start error:', error);
+        recognitionRef.current = null;
+        setListeningState(false);
+      }
+    }, wasNarrating ? 120 : 0);
   }
 
   function handleNewSession() {
@@ -228,6 +281,16 @@ export default function Home() {
     anchor.download = name;
     anchor.click();
     setTimeout(() => URL.revokeObjectURL(anchor.href), 1000);
+  }
+
+  function getActiveSessionSnapshot(state, fallbackTitle) {
+    return (
+      [...state.sessions, ...state.allSessions].find((session) => session.id === state.curSess) || {
+        id: state.curSess || `${fallbackTitle.toLowerCase()}-${Date.now()}`,
+        title: fallbackTitle,
+        messages: state.messages,
+      }
+    );
   }
 
   function handleExport(format) {
@@ -269,13 +332,7 @@ export default function Home() {
       return;
     }
 
-    const activeSession =
-      [...freshState.sessions, ...freshState.allSessions].find((session) => session.id === freshState.curSess) ||
-      {
-        id: freshState.curSess || `companion-${Date.now()}`,
-        title: 'Daily Check-in',
-        messages: freshState.messages,
-      };
+    const activeSession = getActiveSessionSnapshot(freshState, 'Daily Check-in');
 
     setDownloadingCompanionReport(true);
     try {
@@ -294,6 +351,37 @@ export default function Home() {
     }
   }
 
+  async function handleDownloadConsultantReport() {
+    const freshState = useSessionStore.getState();
+    const extractedFields = freshState.extracted || {};
+    const filledFields = Object.values(extractedFields).filter((value) => value && String(value).trim()).length;
+    const hasCoreField = String(
+      extractedFields.patient_name || extractedFields.consultation_reason || extractedFields.chief_complaint || ''
+    ).trim();
+
+    if (!hasCoreField || filledFields < 4) {
+      alert(t('consultantReportNotReady'));
+      return;
+    }
+
+    const activeSession = getActiveSessionSnapshot(freshState, 'Consultation');
+    setDownloadingConsultantReport(true);
+    try {
+      const report = buildConsultantReportData({
+        session: {
+          ...activeSession,
+          messages: freshState.messages,
+        },
+        extracted: extractedFields,
+      });
+      await downloadConsultantReportPdf({ report });
+    } catch (error) {
+      alert(t('consultantReportFailed') + error.message);
+    } finally {
+      setDownloadingConsultantReport(false);
+    }
+  }
+
   async function handleSummary() {
     const freshState = useSessionStore.getState();
     if (!freshState.messages.length) {
@@ -301,6 +389,8 @@ export default function Home() {
       return;
     }
 
+    stopNarration();
+    const narrationId = latestInteractionRef.current;
     addMessage({ role: 'ai', content: t('generatingSummary') });
     try {
       let summary;
@@ -316,7 +406,9 @@ export default function Home() {
         );
       }
       addMessage({ role: 'ai', content: `${t('summaryReport')}\n\n${summary}` });
-      speakText(summary);
+      if (narrationId === latestInteractionRef.current && !listeningRef.current) {
+        speakText(summary);
+      }
     } catch (error) {
       addMessage({ role: 'ai', content: t('summaryFailed') + error.message });
     }
@@ -451,6 +543,9 @@ export default function Home() {
             showCompanionReportAction={canDownloadCompanionReport}
             onDownloadCompanionReport={handleDownloadCompanionReport}
             downloadingCompanionReport={downloadingCompanionReport}
+            showConsultantReportAction={canDownloadConsultantReport}
+            onDownloadConsultantReport={handleDownloadConsultantReport}
+            downloadingConsultantReport={downloadingConsultantReport}
           />
         </div>
         <RightPanel />

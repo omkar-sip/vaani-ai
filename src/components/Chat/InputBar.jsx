@@ -12,8 +12,11 @@ import './InputBar.css';
  *   onSummary: () => void,
  *   onOpenFoodScanner: () => void,
  *   onDownloadCompanionReport?: () => void,
+ *   onDownloadConsultantReport?: () => void,
  *   showCompanionReportAction?: boolean,
+ *   showConsultantReportAction?: boolean,
  *   downloadingCompanionReport?: boolean,
+ *   downloadingConsultantReport?: boolean,
  *   listening?: boolean
  * }} props
  */
@@ -25,8 +28,11 @@ export default function InputBar({
   onSummary,
   onOpenFoodScanner,
   onDownloadCompanionReport,
+  onDownloadConsultantReport,
   showCompanionReportAction,
+  showConsultantReportAction,
   downloadingCompanionReport,
+  downloadingConsultantReport,
   listening,
 }) {
   const [text, setText] = useState('');
@@ -62,6 +68,15 @@ export default function InputBar({
           <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600 }}>{t('export')}</span>
           <button className="exbtn" onClick={() => onExport('json')}>JSON</button>
           <button className="exbtn" onClick={() => onExport('csv')}>CSV</button>
+          {showConsultantReportAction && (
+            <button
+              className="exbtn pdf"
+              onClick={onDownloadConsultantReport}
+              disabled={downloadingConsultantReport}
+            >
+              {downloadingConsultantReport ? t('preparingConsultantReport') : t('downloadConsultantReport')}
+            </button>
+          )}
           <div style={{ flex: 1 }} />
           <button className="exbtn ai" onClick={onSummary}>{t('summary')}</button>
         </div>

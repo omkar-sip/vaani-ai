@@ -32,7 +32,7 @@
 .mode-chip.cons-chip:hover { border-color: var(--cons-accent); color: var(--cons-accent); background: var(--cons-light); }
 
 /* Messages */
-.msg { display: flex; gap: 9px; animation: mIn .2s ease; max-width: 88%; }
+.msg { display: flex; gap: 9px; animation: mIn .2s ease; max-width: 88%; min-width: 0; }
 @keyframes mIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
 .msg.ai   { align-self: flex-start; }
 .msg.user { align-self: flex-end; flex-direction: row-reverse; }
@@ -45,7 +45,7 @@
 .msg.user .mav { background: var(--sky3); color: var(--sky); border: 1.5px solid var(--border); }
 .mbub {
   padding: 11px 14px; border-radius: 16px; font-size: 14px;
-  line-height: 1.65; word-wrap: break-word; font-family: var(--font);
+  line-height: 1.65; word-wrap: break-word; overflow-wrap: anywhere; white-space: pre-wrap; font-family: var(--font);
 }
 .msg.ai .mbub {
   background: var(--card); color: var(--text);

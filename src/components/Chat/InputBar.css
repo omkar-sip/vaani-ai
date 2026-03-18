@@ -54,6 +54,12 @@
   border-radius: 8px; font-size: 12px; font-weight: 600;
   font-family: var(--font); cursor: pointer; color: var(--text2); transition: all .18s;
 }
+.exbtn:disabled {
+  opacity: .7;
+  cursor: wait;
+}
 .exbtn:hover { border-color: var(--sun); color: var(--sun); }
+.exbtn.pdf { background: #eff6ff; border-color: rgba(37,99,235,.28); color: #1d4ed8; }
+.exbtn.pdf:hover { border-color: #1d4ed8; color: #1d4ed8; background: #dbeafe; }
 .exbtn.ai { background: var(--sun3); border-color: rgba(249,115,22,.3); color: #C2410C; }
 .exbtn.ai:hover { background: var(--sun); color: #fff; }

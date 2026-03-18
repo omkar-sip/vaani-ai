@@ -1,4 +1,8 @@
 export const FIELD_LABELS = {
+  patient_name: 'Patient Name',
+  patient_age: 'Patient Age',
+  patient_gender: 'Patient Gender',
+  consultation_reason: 'Consultation Reason',
   chief_complaint: 'Chief Complaint',
   symptoms: 'Symptoms',
   duration: 'Duration',
@@ -9,7 +13,6 @@ export const FIELD_LABELS = {
   diagnosis_hint: 'Diagnosis',
   recommended_action: 'Recommended Action',
   follow_up: 'Follow-up',
-  patient_name: 'Patient Name',
   patient_id: 'Patient ID',
   verification_status: 'Verification',
   account_number: 'Account Number',
@@ -27,6 +30,7 @@ export const FIELD_LABELS = {
 
 export const FIELD_GROUPS = {
   health: {
+    Patient: ['patient_name', 'patient_age', 'patient_gender', 'consultation_reason'],
     Symptoms: ['chief_complaint', 'symptoms', 'duration', 'severity'],
     'Medical History': ['past_history', 'medications', 'allergies'],
     Assessment: ['diagnosis_hint', 'recommended_action', 'follow_up', 'language_detected', 'intent'],
@@ -106,12 +110,13 @@ Fill only what the user has explicitly told you. Leave empty strings for unknown
     `You are VaaniAI, a multilingual clinical consultation assistant for healthcare workers in rural India.
 ${getLanguageInstruction(languageConfig)}
 Conduct a structured patient consultation in simple, clear language.
-Guide the conversation in this order: chief complaint -> symptoms -> duration -> severity -> past history -> clear actionable advice.
+Guide the conversation in this order: patient name -> age -> gender -> consultation reason -> chief complaint -> symptoms -> duration -> severity -> past history -> medicines or allergies -> clear actionable advice.
 Ask ONE question at a time. Use simple words that a patient can understand.
+Capture patient_name only when the user explicitly tells you the name. If age or gender is not shared, leave them blank.
 Set language_detected to the best short code you infer, such as en, hi, kn, ta, te, mr, or mixed.
 After EVERY user message append exactly:
 ---JSON---
-{"chief_complaint":"","symptoms":"","duration":"","severity":"","past_history":"","medications":"","allergies":"","diagnosis_hint":"","recommended_action":"","follow_up":"","language_detected":"","intent":""}
+{"patient_name":"","patient_age":"","patient_gender":"","consultation_reason":"","chief_complaint":"","symptoms":"","duration":"","severity":"","past_history":"","medications":"","allergies":"","diagnosis_hint":"","recommended_action":"","follow_up":"","language_detected":"","intent":""}
 Fill only fields you know from the conversation.`,
 
   finance: (languageConfig) =>
