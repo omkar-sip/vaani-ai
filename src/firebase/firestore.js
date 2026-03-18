@@ -66,7 +66,38 @@ export async function getCompanionLog(uid, date) {
   return snap.exists() ? { id: snap.id, ...snap.data() } : null;
 }
 
-// ─── User Profile ─────────────────────────────────────
+// ─── User Document (top-level) ────────────────────────
+
+/**
+ * Create or update the top-level user document at users/{uid}.
+ * Called on every login so the user always appears in Firestore.
+ * Uses merge so first login creates the doc, subsequent logins just update lastLoginAt.
+ * @param {import('firebase/auth').User} user - Firebase Auth user object
+ */
+export async function saveUserToFirestore(user) {
+  const ref = doc(db, 'users', user.uid);
+  const snap = await getDoc(ref);
+
+  const provider = user.providerData?.[0]?.providerId || 'unknown';
+
+  if (snap.exists()) {
+    // Returning user — just update last login
+    await setDoc(ref, { lastLoginAt: serverTimestamp() }, { merge: true });
+  } else {
+    // New user — create full document
+    await setDoc(ref, {
+      uid: user.uid,
+      displayName: user.displayName || null,
+      email: user.email || null,
+      photoURL: user.photoURL || null,
+      provider,
+      createdAt: serverTimestamp(),
+      lastLoginAt: serverTimestamp(),
+    });
+  }
+}
+
+// ─── User Profile (sub-document) ──────────────────────
 
 /**
  * Save or update the user profile.

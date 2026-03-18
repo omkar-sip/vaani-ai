@@ -3,6 +3,8 @@
   padding: 0 16px; height: 56px;
   display: flex; align-items: center; gap: 10px;
   flex-shrink: 0; box-shadow: var(--shadow);
+  overflow: hidden; max-width: 100vw;
+  box-sizing: border-box;
 }
 .logo-icon {
   width: 32px; height: 32px;
@@ -46,7 +48,8 @@
 }
 .user-menu {
   position: absolute; right: 0; top: 42px; z-index: 100;
-  width: 220px; background: var(--card);
+  width: 220px; max-width: calc(100vw - 32px);
+  background: var(--card);
   border: 1.5px solid var(--border);
   border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,.12);
   overflow: hidden; animation: menuIn .15s ease;
@@ -70,3 +73,13 @@
 .user-menu-item:hover { background: var(--bg); }
 .user-menu-item.logout { color: var(--rose); }
 .user-menu-item.logout:hover { background: #FEF2F2; }
+
+/* ─── Topbar Mobile ────────────────────── */
+@media (max-width: 480px) {
+  .topbar { padding: 0 10px; gap: 6px; height: 50px; }
+  .logo-icon { width: 28px; height: 28px; font-size: 14px; border-radius: 7px; }
+  .logo-name { font-size: 14px; }
+  .logo-sub { font-size: 9px; }
+  .mbadge { padding: 2px 7px; font-size: 10px; }
+  .user-avatar { width: 28px; height: 28px; font-size: 11px; }
+}

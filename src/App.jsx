@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useUserStore } from './stores/useUserStore';
 import { useSessionStore } from './stores/useSessionStore';
 import { onAuthChange } from './firebase/auth';
+import { saveUserToFirestore } from './firebase/firestore';
 import { now } from './utils/helpers';
 
 import LanguageSelect from './pages/Auth/LanguageSelect';
@@ -28,6 +29,8 @@ export default function App() {
     const unsub = onAuthChange((user) => {
       if (user) {
         setUser(user);
+        // Save/update user document in Firestore on every login
+        saveUserToFirestore(user).catch((e) => console.error('Firestore user save failed:', e));
         if (user.providerData.some((p) => p.providerId === 'google.com')) {
           // Google users are auto-verified
           initSession('companion');
