@@ -1,0 +1,151 @@
+/* ════════════════════════════════════════
+   VaaniAI — Global Design Tokens & Layout
+   ════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+
+:root {
+  /* Brand */
+  --sun: #F97316; --sun2: #FB923C; --sun3: #FFF7ED; --sun4: #FFFBF7;
+  --teal: #0D9488; --teal3: #F0FDFA;
+  --leaf: #16A34A; --leaf3: #F0FDF4;
+  --sky: #2563EB; --sky3: #EFF6FF;
+  --rose: #DC2626; --rose3: #FEF2F2;
+  --amber: #D97706; --amber3: #FFFBEB;
+  --purple: #7C3AED; --purple3: #F5F3FF;
+  --indigo: #4338CA; --indigo3: #EEF2FF;
+
+  /* Companion mode palette (soft green) */
+  --comp-accent: #059669; --comp-light: #ECFDF5; --comp-border: #A7F3D0;
+
+  /* Consultant mode palette (warm orange) */
+  --cons-accent: #F97316; --cons-light: #FFF7ED; --cons-border: #FED7AA;
+
+  /* Neutral */
+  --bg: #F8F9FA; --warm: #FEFEFE; --card: #FFFFFF;
+  --text: #111827; --text2: #374151; --text3: #9CA3AF;
+  --border: #E5E7EB; --border2: #D1D5DB;
+  --shadow: 0 1px 8px rgba(0,0,0,.06);
+  --shadow2: 0 4px 20px rgba(0,0,0,.10);
+  --font: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  --r: 12px; --r2: 16px; --r3: 24px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
+}
+
+/* ═══ App Shell ═══ */
+.app-shell {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+}
+
+/* ═══ Body layout ═══ */
+.body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  min-height: 0;
+  position: relative;
+}
+
+.chat-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: all .3s;
+}
+
+/* ═══ Section tabs (consultant) ═══ */
+.sectbar {
+  background: var(--bg);
+  border-bottom: 1.5px solid var(--border);
+  padding: 8px 14px;
+  display: none;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.sectbar.on { display: flex; }
+.stab {
+  flex: 1;
+  padding: 9px 10px;
+  border-radius: var(--r);
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  transition: all .2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: var(--card);
+  font-family: var(--font);
+}
+.stab.on.health  { background: var(--leaf3); border-color: var(--leaf); color: var(--leaf); }
+.stab.on.finance { background: var(--teal3); border-color: var(--teal); color: var(--teal); }
+
+/* ═══ Full-page views ═══ */
+.fview {
+  display: none;
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  flex-direction: column;
+  background: var(--bg);
+}
+.fview.on { display: flex; }
+.vt { font-size: 18px; font-weight: 800; margin-bottom: 3px; }
+.vs { font-size: 13px; color: var(--text3); margin-bottom: 16px; }
+
+/* Stats grid */
+.sgrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 14px; }
+.sbig {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--r2); padding: 13px; text-align: center; box-shadow: var(--shadow);
+}
+.sn { font-size: 22px; font-weight: 800; color: var(--text); }
+.sl { font-size: 11px; color: var(--text3); margin-top: 2px; }
+
+/* Language bars */
+.lbrow { display: flex; align-items: center; gap: 7px; font-size: 12px; margin-bottom: 7px; }
+.lbl { width: 80px; color: var(--text2); flex-shrink: 0; font-weight: 600; }
+.lbt { flex: 1; background: var(--border); border-radius: 3px; height: 7px; overflow: hidden; }
+.lbf { height: 100%; border-radius: 3px; transition: width .6s; }
+.lbp { width: 28px; text-align: right; color: var(--text3); font-weight: 600; }
+
+/* History cards */
+.hcard {
+  background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--r2); padding: 14px; margin-bottom: 10px; box-shadow: var(--shadow);
+}
+.hchead { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; }
+.hctitle { font-size: 13px; font-weight: 700; }
+
+/* ═══ Floating animation ═══ */
+@keyframes flt {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-7px); }
+}

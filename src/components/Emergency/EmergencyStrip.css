@@ -1,0 +1,16 @@
+.emergency-strip {
+  background: linear-gradient(135deg, var(--rose), #EF4444);
+  padding: 10px 16px; display: flex; align-items: center; gap: 10px;
+  flex-shrink: 0; animation: emergPulse 1.2s infinite;
+}
+@keyframes emergPulse { 0%, 100% { opacity: 1; } 50% { opacity: .88; } }
+.emg-text { font-size: 13px; font-weight: 700; color: #fff; flex: 1; }
+.emg-btn {
+  padding: 6px 12px; background: rgba(255,255,255,.25); color: #fff;
+  border: 1px solid rgba(255,255,255,.4); border-radius: 8px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+}
+.emg-call {
+  padding: 6px 12px; background: #fff; color: var(--rose);
+  border: none; border-radius: 8px; font-size: 12px; font-weight: 700; cursor: pointer;
+}

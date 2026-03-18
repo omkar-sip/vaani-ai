@@ -1,0 +1,60 @@
+import { useState } from 'react';
+import { useSessionStore } from '../../stores/useSessionStore';
+import { useUserStore } from '../../stores/useUserStore';
+import { logOut } from '../../firebase/auth';
+import './TopBar.css';
+
+export default function TopBar() {
+  const demo = useSessionStore((s) => s.demo);
+  const user = useUserStore((s) => s.user);
+  const [showMenu, setShowMenu] = useState(false);
+
+  const initial = user?.displayName?.[0]?.toUpperCase()
+    || user?.email?.[0]?.toUpperCase()
+    || 'U';
+
+  async function handleLogout() {
+    setShowMenu(false);
+    await logOut();
+  }
+
+  return (
+    <div className="topbar">
+      <div className="logo-icon">🎙</div>
+      <div>
+        <div className="logo-name">VaaniAI</div>
+        <div className="logo-sub" id="logo-sub">
+          Health Assistant
+        </div>
+      </div>
+      <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className={`mbadge ${demo ? 'demo' : 'live'}`}>
+          <div className="pulse" />
+          <span>{demo ? 'Demo' : 'Live AI'}</span>
+        </div>
+
+        {/* User avatar with logout */}
+        <div className="user-menu-wrap">
+          <button className="user-avatar" onClick={() => setShowMenu(!showMenu)}>
+            {initial}
+          </button>
+          {showMenu && (
+            <>
+              <div className="user-menu-backdrop" onClick={() => setShowMenu(false)} />
+              <div className="user-menu">
+                <div className="user-menu-info">
+                  <div className="user-menu-name">{user?.displayName || 'User'}</div>
+                  <div className="user-menu-email">{user?.email || ''}</div>
+                </div>
+                <div className="user-menu-divider" />
+                <button className="user-menu-item logout" onClick={handleLogout}>
+                  🚪 Sign out
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

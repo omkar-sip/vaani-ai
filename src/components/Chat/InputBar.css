@@ -1,0 +1,52 @@
+/* Input bar */
+.input-wrap {
+  background: var(--card); border-top: 1.5px solid var(--border);
+  padding: 10px 13px; flex-shrink: 0;
+  padding-bottom: calc(10px + var(--safe-bottom));
+}
+.input-wrap.companion-mode  { border-top-color: var(--comp-border); }
+.input-wrap.consultant-mode { border-top-color: var(--cons-border); }
+.irow { display: flex; gap: 8px; align-items: flex-end; }
+.tbox {
+  flex: 1; background: var(--bg); border: 1.5px solid var(--border);
+  border-radius: 20px; padding: 10px 15px; color: var(--text);
+  font-family: var(--font); font-size: 14px; resize: none;
+  min-height: 42px; max-height: 100px; line-height: 1.5;
+  outline: none; transition: border-color .2s;
+}
+.tbox:focus { border-color: var(--sun); background: var(--card); }
+.input-wrap.companion-mode .tbox:focus { border-color: var(--comp-accent); }
+.tbox::placeholder { color: var(--text3); }
+.sbtn {
+  width: 42px; height: 42px; border: none; border-radius: 12px;
+  color: #fff; font-size: 18px; cursor: pointer; flex-shrink: 0;
+  transition: all .18s; display: flex; align-items: center; justify-content: center;
+  background: var(--sun);
+}
+.input-wrap.companion-mode .sbtn { background: var(--comp-accent); }
+.sbtn:active { transform: scale(.94); }
+.action-row { display: flex; gap: 6px; align-items: center; margin-top: 7px; flex-wrap: wrap; }
+.abtn {
+  padding: 7px 12px; border-radius: 8px; border: 1.5px solid var(--border);
+  background: var(--card); color: var(--text2); font-size: 12px; font-weight: 600;
+  font-family: var(--font); cursor: pointer; transition: all .18s;
+  display: flex; align-items: center; gap: 4px;
+}
+.abtn:hover { border-color: var(--sun); color: var(--sun); background: var(--sun3); }
+.abtn.voice { background: var(--rose3); border-color: rgba(220,38,38,.25); color: var(--rose); }
+.ahint { font-size: 11px; color: var(--text3); margin-left: auto; }
+
+/* Export bar */
+.expbar {
+  background: var(--warm); border-top: 1px solid var(--border);
+  padding: 7px 13px; display: none; gap: 6px; align-items: center; flex-shrink: 0;
+}
+.expbar.on { display: flex; }
+.exbtn {
+  padding: 6px 11px; background: var(--card); border: 1.5px solid var(--border);
+  border-radius: 8px; font-size: 12px; font-weight: 600;
+  font-family: var(--font); cursor: pointer; color: var(--text2); transition: all .18s;
+}
+.exbtn:hover { border-color: var(--sun); color: var(--sun); }
+.exbtn.ai { background: var(--sun3); border-color: rgba(249,115,22,.3); color: #C2410C; }
+.exbtn.ai:hover { background: var(--sun); color: #fff; }

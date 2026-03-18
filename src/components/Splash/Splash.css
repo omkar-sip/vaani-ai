@@ -1,0 +1,107 @@
+/* Splash screen styles — scoped to .splash */
+.splash {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 200;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.slide {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 40px 24px;
+  text-align: center;
+  width: 100%;
+  max-width: 440px;
+  animation: sIn 0.35s ease;
+}
+.slide.on { display: flex; }
+@keyframes sIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.splash-logo {
+  width: 80px; height: 80px; border-radius: 24px;
+  background: linear-gradient(135deg, #F97316, #EF4444);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 36px; margin-bottom: 24px;
+  box-shadow: 0 8px 28px rgba(249,115,22,.35);
+  animation: flt 3.5s ease-in-out infinite;
+}
+@keyframes flt {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-7px); }
+}
+.s-title { font-size: 26px; font-weight: 800; color: var(--text); line-height: 1.2; margin-bottom: 8px; }
+.s-sub   { font-size: 15px; color: var(--text2); line-height: 1.65; max-width: 320px; margin-bottom: 6px; }
+
+/* Dots */
+.dots { display: flex; gap: 7px; justify-content: center; margin: 22px 0 18px; }
+.dot  { width: 8px; height: 8px; border-radius: 4px; background: var(--border2); transition: all .3s; }
+.dot.on { background: var(--sun); width: 22px; }
+
+/* Buttons */
+.bigbtn {
+  width: 100%; max-width: 340px; padding: 16px 22px; border-radius: var(--r2);
+  border: none; font-family: var(--font); font-size: 16px; font-weight: 700;
+  cursor: pointer; transition: all .18s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.bigbtn.pri { background: var(--sun); color: #fff; box-shadow: 0 4px 16px rgba(249,115,22,.35); }
+.bigbtn.pri:active { transform: scale(.97); }
+.bigbtn.sec {
+  background: var(--card); color: var(--text2); border: 1.5px solid var(--border);
+  box-shadow: var(--shadow); margin-top: 10px;
+}
+.bigbtn.sec:active { transform: scale(.98); }
+.skiplink { font-size: 13px; color: var(--text3); cursor: pointer; margin-top: 14px; }
+.skiplink:hover { color: var(--sun); }
+
+/* Feature list */
+.feat-list { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 360px; margin: 14px 0; }
+.feat {
+  background: var(--card); border: 1.5px solid var(--border); border-radius: var(--r2);
+  padding: 14px 16px; display: flex; align-items: center; gap: 14px;
+  text-align: left; box-shadow: var(--shadow);
+}
+.ficon {
+  width: 44px; height: 44px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; flex-shrink: 0;
+}
+.ftitle { font-size: 14px; font-weight: 700; color: var(--text); }
+.fsub   { font-size: 12px; color: var(--text3); margin-top: 2px; line-height: 1.4; }
+
+/* Key input */
+.keybox {
+  background: var(--sun4); border: 1.5px solid rgba(249,115,22,.2); border-radius: var(--r);
+  padding: 13px 15px; font-size: 13px; color: #92400E; line-height: 1.7;
+  text-align: left; width: 100%; max-width: 340px; margin-bottom: 13px;
+}
+.keybox strong { color: #C2410C; }
+.keyinput {
+  width: 100%; max-width: 340px; padding: 13px 15px; font-size: 14px;
+  font-family: var(--font); background: var(--card); border: 1.5px solid var(--border);
+  border-radius: var(--r); outline: none; color: var(--text); transition: border-color .2s; margin-bottom: 11px;
+}
+.keyinput:focus { border-color: var(--sun); box-shadow: 0 0 0 3px rgba(249,115,22,.12); }
+
+/* Mode preview cards on splash */
+.mode-preview { display: flex; gap: 10px; width: 100%; max-width: 340px; margin: 14px 0; }
+.mode-card {
+  flex: 1; border: 2px solid var(--border); border-radius: var(--r2);
+  padding: 14px 10px; text-align: center; background: var(--card);
+  cursor: pointer; transition: all .2s;
+}
+.mode-card.comp { border-color: transparent; }
+.mode-card.comp.sel { border-color: var(--comp-accent); background: var(--comp-light); }
+.mode-card.cons.sel { border-color: var(--cons-accent); background: var(--cons-light); }
+.mode-card-icon  { font-size: 26px; margin-bottom: 6px; }
+.mode-card-title { font-size: 13px; font-weight: 700; color: var(--text); }
+.mode-card-sub   { font-size: 11px; color: var(--text3); margin-top: 2px; line-height: 1.4; }
