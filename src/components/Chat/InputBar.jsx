@@ -1,9 +1,21 @@
-import { useState, useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useSessionStore } from '../../stores/useSessionStore';
+import { useI18n } from '../../hooks/useI18n';
 import './InputBar.css';
 
 /**
- * @param {{ onSend: (text: string) => void, onVoice: () => void, onNewSession: () => void, onExport: (fmt: string) => void, onSummary: () => void, onOpenFoodScanner: () => void, listening?: boolean }} props
+ * @param {{
+ *   onSend: (text: string) => void,
+ *   onVoice: () => void,
+ *   onNewSession: () => void,
+ *   onExport: (fmt: string) => void,
+ *   onSummary: () => void,
+ *   onOpenFoodScanner: () => void,
+ *   onDownloadCompanionReport?: () => void,
+ *   showCompanionReportAction?: boolean,
+ *   downloadingCompanionReport?: boolean,
+ *   listening?: boolean
+ * }} props
  */
 export default function InputBar({
   onSend,
@@ -12,10 +24,14 @@ export default function InputBar({
   onExport,
   onSummary,
   onOpenFoodScanner,
+  onDownloadCompanionReport,
+  showCompanionReportAction,
+  downloadingCompanionReport,
   listening,
 }) {
   const [text, setText] = useState('');
   const mode = useSessionStore((s) => s.mode);
+  const { t } = useI18n();
   const isComp = mode === 'companion';
   const taRef = useRef(null);
 
@@ -43,11 +59,11 @@ export default function InputBar({
     <div className={`input-wrap ${isComp ? 'companion-mode' : 'consultant-mode'}`}>
       {!isComp && (
         <div className="expbar on">
-          <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600 }}>Export:</span>
+          <span style={{ fontSize: 11, color: 'var(--text3)', fontWeight: 600 }}>{t('export')}</span>
           <button className="exbtn" onClick={() => onExport('json')}>JSON</button>
           <button className="exbtn" onClick={() => onExport('csv')}>CSV</button>
           <div style={{ flex: 1 }} />
-          <button className="exbtn ai" onClick={onSummary}>Summary</button>
+          <button className="exbtn ai" onClick={onSummary}>{t('summary')}</button>
         </div>
       )}
 
@@ -63,7 +79,7 @@ export default function InputBar({
             autoResize(event.target);
           }}
           onKeyDown={handleKey}
-          placeholder={isComp ? 'How are you feeling today?' : 'Describe your symptoms or concern...'}
+          placeholder={isComp ? t('howFeeling') : t('describeConcern')}
         />
         <button id="send-btn" className="sbtn" onClick={handleSend}>^</button>
       </div>
@@ -73,11 +89,20 @@ export default function InputBar({
           className={`abtn voice ${listening ? 'pulsing' : ''}`}
           onClick={onVoice}
         >
-          {listening ? 'Stop listening' : 'Speak'}
+          {listening ? t('stopListening') : t('speak')}
         </button>
-        <button className="abtn" onClick={onNewSession}>New Session</button>
-        <button className="abtn scan" onClick={onOpenFoodScanner}>Scan Food</button>
-        <span className="ahint">Voice AI · Gemini 2.0</span>
+        <button className="abtn" onClick={onNewSession}>{t('newSession')}</button>
+        {isComp && showCompanionReportAction && (
+          <button
+            className="abtn report"
+            onClick={onDownloadCompanionReport}
+            disabled={downloadingCompanionReport}
+          >
+            {downloadingCompanionReport ? t('preparingHealthReport') : t('downloadHealthReport')}
+          </button>
+        )}
+        <button className="abtn scan" onClick={onOpenFoodScanner}>{t('scanFood')}</button>
+        <span className="ahint">{t('voiceAiHint')}</span>
       </div>
     </div>
   );

@@ -32,8 +32,14 @@
   font-family: var(--font); cursor: pointer; transition: all .18s;
   display: flex; align-items: center; gap: 4px;
 }
+.abtn:disabled {
+  opacity: .7;
+  cursor: wait;
+}
 .abtn:hover { border-color: var(--sun); color: var(--sun); background: var(--sun3); }
 .abtn.voice { background: var(--rose3); border-color: rgba(220,38,38,.25); color: var(--rose); }
+.abtn.report { background: #ecfeff; border-color: rgba(15,118,110,.22); color: #0f766e; }
+.abtn.report:hover { border-color: #0f766e; color: #0f766e; background: #cffafe; }
 .abtn.scan { background: #fff7ed; border-color: rgba(249,115,22,.24); color: #c2410c; }
 .ahint { font-size: 11px; color: var(--text3); margin-left: auto; }
 

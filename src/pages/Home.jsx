@@ -1,9 +1,12 @@
-import { useState, useRef } from 'react';
+import { useRef, useState } from 'react';
 import { useSessionStore } from '../stores/useSessionStore';
 import { useCompanionStore } from '../stores/useCompanionStore';
 import { callGemini, getDemoResponse } from '../api/gemini';
-import { SYSTEM_PROMPTS, VOICE_SAMPLES, FIELD_LABELS, DISTRESS_WORDS } from '../utils/constants';
-import { detectLang, parseCompanionReply, parseConsultantReply, sleep, now } from '../utils/helpers';
+import { DISTRESS_WORDS, FIELD_LABELS, SYSTEM_PROMPTS, VOICE_SAMPLES } from '../utils/constants';
+import { detectLang, now, parseCompanionReply, parseConsultantReply, sleep } from '../utils/helpers';
+import { useI18n } from '../hooks/useI18n';
+import { buildCompanionHealthReport } from '../features/companionReport/reportAnalysis';
+import { downloadCompanionReportPdf } from '../features/companionReport/pdfReport';
 
 import TopBar from '../components/TopBar/TopBar';
 import ModeToggle from '../components/ModeToggle/ModeToggle';
@@ -19,6 +22,7 @@ export default function Home() {
   const [compCardVisible, setCompCardVisible] = useState(false);
   const [listening, setListening] = useState(false);
   const [foodScannerOpen, setFoodScannerOpen] = useState(false);
+  const [downloadingCompanionReport, setDownloadingCompanionReport] = useState(false);
   const voiceIdx = useRef({ companion: 0, health: 0, finance: 0 });
   const recognitionRef = useRef(null);
 
@@ -26,6 +30,7 @@ export default function Home() {
   const section = useSessionStore((s) => s.section);
   const setSection = useSessionStore((s) => s.setSection);
   const view = useSessionStore((s) => s.view);
+  const messages = useSessionStore((s) => s.messages);
   const addMessage = useSessionStore((s) => s.addMessage);
   const incrementTurns = useSessionStore((s) => s.incrementTurns);
   const setExtracted = useSessionStore((s) => s.setExtracted);
@@ -38,14 +43,17 @@ export default function Home() {
 
   const applyCompanionData = useCompanionStore((s) => s.applyCompanionData);
   const triggerDistress = useCompanionStore((s) => s.triggerDistress);
+  const { language, languageConfig, t } = useI18n();
 
   const isComp = mode === 'companion';
+  const companionUserTurns = messages.filter((message) => message.role === 'user').length;
+  const canDownloadCompanionReport = isComp && companionUserTurns >= 2;
 
   function formatHistoryTime(value) {
-    if (!value) return 'Recently';
+    if (!value) return t('recently');
     const parsed = new Date(value);
     if (Number.isNaN(parsed.getTime())) return value;
-    return parsed.toLocaleString([], {
+    return parsed.toLocaleString(languageConfig.locale, {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -66,10 +74,14 @@ export default function Home() {
     utterance.rate = 1;
     utterance.pitch = 1;
     utterance.volume = 1;
+    utterance.lang = languageConfig.speechCode;
+
     const voices = window.speechSynthesis.getVoices();
-    const preferred = voices.find(
-      (voice) => voice.lang.startsWith('en') && voice.name.includes('Google')
-    ) || voices.find((voice) => voice.lang.startsWith('en'));
+    const preferred =
+      voices.find((voice) => voice.lang?.toLowerCase() === languageConfig.speechCode.toLowerCase()) ||
+      voices.find((voice) => voice.lang?.toLowerCase().startsWith(languageConfig.ttsPrefix)) ||
+      voices.find((voice) => voice.lang?.toLowerCase().startsWith('en'));
+
     if (preferred) utterance.voice = preferred;
     window.speechSynthesis.speak(utterance);
   }
@@ -102,7 +114,7 @@ export default function Home() {
       if (currentDemo) {
         await sleep(900 + Math.random() * 500);
         const key = currentIsComp ? 'companion' : currentSection;
-        const pick = getDemoResponse(key, currentTurns - 1);
+        const pick = getDemoResponse(key, currentTurns - 1, language);
         reply =
           pick.text +
           '\n---' +
@@ -111,8 +123,8 @@ export default function Home() {
           JSON.stringify(pick.json);
       } else {
         const systemPrompt = currentIsComp
-          ? SYSTEM_PROMPTS.companion()
-          : SYSTEM_PROMPTS[currentSection]();
+          ? SYSTEM_PROMPTS.companion(languageConfig)
+          : SYSTEM_PROMPTS[currentSection](languageConfig);
         const apiMessages = currentMessages.map((message) => ({
           role: message.role === 'ai' ? 'assistant' : message.role,
           content: message.content,
@@ -137,14 +149,14 @@ export default function Home() {
         if (json) {
           setExtracted(json);
           if (json.language_detected) {
-            const langMap = { kn: 'kn', hi: 'hi', en: 'en', mixed: 'mx' };
+            const langMap = { kn: 'kn', hi: 'hi', en: 'en', mixed: 'mx', ta: 'mx', te: 'mx', mr: 'mx' };
             updateLangStat(langMap[json.language_detected] || 'mx');
           }
         }
       }
     } catch (error) {
       setShowTyping(false);
-      addMessage({ role: 'ai', content: 'Warning: ' + error.message });
+      addMessage({ role: 'ai', content: t('warningPrefix') + error.message });
     }
   }
 
@@ -171,7 +183,7 @@ export default function Home() {
     recognitionRef.current = recognition;
     recognition.continuous = false;
     recognition.interimResults = false;
-    recognition.lang = 'en-IN';
+    recognition.lang = languageConfig.speechCode;
     recognition.maxAlternatives = 1;
 
     recognition.onstart = () => setListening(true);
@@ -187,7 +199,7 @@ export default function Home() {
     recognition.onerror = (event) => {
       console.error('Speech recognition error:', event.error);
       if (event.error === 'not-allowed') {
-        alert('Microphone access denied. Please allow microphone permissions in your browser settings.');
+        alert(t('microphoneDenied'));
       }
       setListening(false);
     };
@@ -200,7 +212,7 @@ export default function Home() {
     const id = 's' + Date.now();
     addSession({
       id,
-      title: 'Session ' + (sessions.length + 1),
+      title: `${t('newSession')} ${sessions.length + 1}`,
       domain: mode,
       time: now(),
       turns: 0,
@@ -220,7 +232,7 @@ export default function Home() {
 
   function handleExport(format) {
     if (!Object.keys(extracted).length) {
-      alert('No data yet. Start a consultation first.');
+      alert(t('noDataYet'));
       return;
     }
 
@@ -249,34 +261,64 @@ export default function Home() {
     );
   }
 
-  async function handleSummary() {
+  async function handleDownloadCompanionReport() {
     const freshState = useSessionStore.getState();
-    if (!freshState.messages.length) {
-      alert('No data yet. Start a consultation first.');
+    const userTurns = freshState.messages.filter((message) => message.role === 'user').length;
+    if (userTurns < 2) {
+      alert(t('healthReportNotReady'));
       return;
     }
 
-    addMessage({ role: 'ai', content: 'Generating summary report...' });
+    const activeSession =
+      [...freshState.sessions, ...freshState.allSessions].find((session) => session.id === freshState.curSess) ||
+      {
+        id: freshState.curSess || `companion-${Date.now()}`,
+        title: 'Daily Check-in',
+        messages: freshState.messages,
+      };
+
+    setDownloadingCompanionReport(true);
+    try {
+      const report = buildCompanionHealthReport({
+        session: {
+          ...activeSession,
+          messages: freshState.messages,
+        },
+        companionSnapshot: useCompanionStore.getState(),
+      });
+      await downloadCompanionReportPdf({ report });
+    } catch (error) {
+      alert(t('healthReportFailed') + error.message);
+    } finally {
+      setDownloadingCompanionReport(false);
+    }
+  }
+
+  async function handleSummary() {
+    const freshState = useSessionStore.getState();
+    if (!freshState.messages.length) {
+      alert(t('noSummaryYet'));
+      return;
+    }
+
+    addMessage({ role: 'ai', content: t('generatingSummary') });
     try {
       let summary;
       if (freshState.demo) {
         await sleep(900);
-        summary =
-          freshState.section === 'health'
-            ? 'Clinical Summary: Patient presents with headache and fever lasting 3 days, moderate severity. Viral fever is the likely diagnosis. Recommended action: visit the nearest PHC, maintain hydration, and rest. Follow-up advised in 3 to 5 days if no improvement.'
-            : 'Financial Summary: Patient identity verified. A payment of INR 5000 via UPI has been recorded. Payment date and reason have been noted. Account details updated successfully.';
+        summary = freshState.section === 'health' ? t('healthDemoSummary') : t('financeDemoSummary');
       } else {
-        const prompt = `Write a concise 3-4 sentence professional ${freshState.section} summary in English from this structured data: ${JSON.stringify(freshState.extracted)}. Be clinical and factual.`;
+        const prompt = `Write a concise 3-4 sentence professional ${freshState.section} summary in ${languageConfig.geminiName} from this structured data: ${JSON.stringify(freshState.extracted)}. Be factual and useful for a real user.`;
         summary = await callGemini(
           freshState.apiKey,
-          'You are a medical documentation assistant.',
+          `You are a medical documentation assistant. Respond in ${languageConfig.geminiName}.`,
           [{ role: 'user', content: prompt }]
         );
       }
-      addMessage({ role: 'ai', content: 'Summary Report\n\n' + summary });
+      addMessage({ role: 'ai', content: `${t('summaryReport')}\n\n${summary}` });
       speakText(summary);
     } catch (error) {
-      addMessage({ role: 'ai', content: 'Summary failed: ' + error.message });
+      addMessage({ role: 'ai', content: t('summaryFailed') + error.message });
     }
   }
 
@@ -285,11 +327,11 @@ export default function Home() {
       <div className="app-shell">
         <TopBar />
         <div className="fview on">
-          <div className="vt">Session History</div>
-          <div className="vs">Saved chats, conversations, and food scans across all sessions</div>
+          <div className="vt">{t('historyTitle')}</div>
+          <div className="vs">{t('historySubtitle')}</div>
           {!allSessions.length ? (
             <div style={{ color: 'var(--text3)', textAlign: 'center', marginTop: 36, fontSize: 14 }}>
-              No sessions yet. Start a conversation.
+              {t('noSessions')}
             </div>
           ) : (
             allSessions.map((session) => (
@@ -297,11 +339,11 @@ export default function Home() {
                 <div className="hchead">
                   <span className="hctitle">{session.title}</span>
                   <span className={`dtag ${session.domain === 'companion' ? 'companion' : 'health'}`}>
-                    {session.domain}
+                    {session.domain === 'companion' ? t('companion') : t('consultant')}
                   </span>
                   {session.domain !== 'companion' && (
                     <span className={`dtag ${session.section === 'finance' ? 'finance' : 'health'}`}>
-                      {session.section}
+                      {session.section === 'finance' ? t('financial') : t('health')}
                     </span>
                   )}
                   <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text3)' }}>
@@ -310,9 +352,9 @@ export default function Home() {
                 </div>
 
                 <div className="history-meta-row">
-                  <span>{session.turns || 0} user turns</span>
-                  <span>{session.messages?.length || 0} messages</span>
-                  <span>{session.foodScans?.length || 0} food scans</span>
+                  <span>{session.turns || 0} {t('userTurns')}</span>
+                  <span>{session.messages?.length || 0} {t('messages')}</span>
+                  <span>{session.foodScans?.length || 0} {t('scans')}</span>
                 </div>
 
                 {session.preview && (
@@ -323,11 +365,11 @@ export default function Home() {
 
                 {!!session.messages?.length && (
                   <div className="history-block">
-                    <div className="history-block-title">Recent conversation</div>
+                    <div className="history-block-title">{t('recentConversation')}</div>
                     <div className="history-list">
                       {session.messages.slice(-3).map((message, index) => (
                         <div className="history-item" key={`${session.id}-msg-${index}`}>
-                          <span className={`history-role ${message.role}`}>{message.role === 'ai' ? 'AI' : 'You'}</span>
+                          <span className={`history-role ${message.role}`}>{message.role === 'ai' ? t('ai') : t('you')}</span>
                           <span className="history-text">{trimPreview(message.content, 140)}</span>
                         </div>
                       ))}
@@ -337,7 +379,7 @@ export default function Home() {
 
                 {!!session.foodScans?.length && (
                   <div className="history-block">
-                    <div className="history-block-title">Food scans</div>
+                    <div className="history-block-title">{t('foodScans')}</div>
                     <div className="history-list">
                       {session.foodScans.slice(0, 3).map((scan) => (
                         <div className="history-item food" key={scan.id}>
@@ -355,7 +397,7 @@ export default function Home() {
 
                 <div className="history-actions">
                   <button className="history-open-btn" onClick={() => openSession(session.id)}>
-                    Open Session
+                    {t('openSession')}
                   </button>
                 </div>
               </div>
@@ -378,13 +420,13 @@ export default function Home() {
             className={`stab health ${section === 'health' ? 'on' : ''}`}
             onClick={() => setSection('health')}
           >
-            Health
+            {t('health')}
           </button>
           <button
             className={`stab finance ${section === 'finance' ? 'on' : ''}`}
             onClick={() => setSection('finance')}
           >
-            Financial
+            {t('financial')}
           </button>
         </div>
       )}
@@ -406,6 +448,9 @@ export default function Home() {
             onSummary={handleSummary}
             onOpenFoodScanner={() => setFoodScannerOpen(true)}
             listening={listening}
+            showCompanionReportAction={canDownloadCompanionReport}
+            onDownloadCompanionReport={handleDownloadCompanionReport}
+            downloadingCompanionReport={downloadingCompanionReport}
           />
         </div>
         <RightPanel />
